@@ -20,9 +20,16 @@ app.get("/:boardId/activeSprint", async (req, res) => {
   const active_sprint = data.values.filter(
     (sprint) => sprint.state === "active"
   );
-  res.json({
-    active_sprint: active_sprint.length === 1 ? active_sprint[0] : null,
-  });
+  if (active_sprint.length === 0) {
+    const closed_sprints = data.values.filter(
+      (sprint) => sprint.state === "closed"
+    );
+    res.json({ active_sprint: closed_sprints[closed_sprints.length - 1] });
+  } else {
+    res.json({
+      active_sprint: active_sprint[0],
+    });
+  }
 });
 
 app.get("/sprint/:sprintId/stories", async (req, res) => {
@@ -40,6 +47,7 @@ app.get("/sprint/:sprintId/stories", async (req, res) => {
         project_name: issue.fields.project.name,
         status_name: issue.fields.status.name,
         sprint_id: issue.fields.sprint.id.toString(),
+        story_ac_hygiene: issue.fields.customfield_10157 ? "YES" : "NO",
       };
     });
   res.json({
@@ -65,17 +73,53 @@ app.get("/sprint/:sprintId/progress", async (req, res) => {
         };
       }
     } else {
-      const parent_id = issue.fields.parent.id;
-      const child_id = issue.id;
-      story_subtask_map[parent_id].number_of_sub_tasks++;
-      if (issue.fields.status.name === "Done") {
-        story_subtask_map[parent_id].completed_sub_tasks++;
+      if (issue.fields.parent) {
+        const parent_id = issue.fields.parent.id;
+        const child_id = issue.id;
+        story_subtask_map[parent_id].number_of_sub_tasks++;
+        if (issue.fields.status.name === "Done") {
+          story_subtask_map[parent_id].completed_sub_tasks++;
+        }
       }
     }
   }
   const values = Object.values(story_subtask_map);
   res.json({
     sprint_progress: values,
+  });
+});
+
+app.get("/sprint/:sprintId/subtasks/progress", async (req, res) => {
+  const sprint_id = req.params.sprintId;
+  const data = await getSprintIssues(sprint_id);
+  const status_category_map = {};
+  const issues = data.issues;
+  const sub_tasks = issues
+    .filter((i) => i.fields.issuetype.name === "Sub-task")
+    .map((i) => {
+      return {
+        issue_id: i.id,
+        issue_type: i.fields.issuetype.name,
+        story_id: i.fields.parent.id,
+        status_category_name: i.fields.status.statusCategory.name,
+        issue_name: i.fields.summary,
+      };
+    });
+  for (let subtask of sub_tasks) {
+    const key = subtask.story_id + subtask.status_category_name;
+    if (!status_category_map[key]) {
+      status_category_map[key] = {
+        story_id: subtask.story_id,
+        status_category_name: subtask.status_category_name,
+        issue_count: 1,
+      };
+    } else {
+      status_category_map[key].issue_count++;
+    }
+  }
+  const values = Object.values(status_category_map);
+  res.json({
+    values,
   });
 });
 
