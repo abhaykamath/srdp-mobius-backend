@@ -48,6 +48,18 @@ app.get("/sprint/:sprintId/stories", async (req, res) => {
         status_name: issue.fields.status.name,
         sprint_id: issue.fields.sprint.id.toString(),
         story_ac_hygiene: issue.fields.customfield_10157 ? "YES" : "NO",
+        original_estimate:
+          issue.fields.timetracking.originalEstimate || "Not added",
+        remaining_estimate:
+          issue.fields.timetracking.remainingEstimate || "Not added",
+        time_spent: issue.fields.timetracking.timeSpent || "Not added",
+        story_reviewers: issue.fields.customfield_10003
+          ? issue.fields.customfield_10003.length !== 0
+            ? issue.fields.customfield_10003
+                .map((r, i) => r.displayName)
+                .join(", ")
+            : "Reviewers not added"
+          : "Reviewers not added",
       };
     });
   res.json({
@@ -70,6 +82,7 @@ app.get("/sprint/:sprintId/progress", async (req, res) => {
           story_name: issue.fields.summary,
           project_id: issue.fields.project.id,
           sprint_id: issue.fields.sprint.id,
+          story_points: 0,
         };
       }
     } else {
@@ -77,6 +90,10 @@ app.get("/sprint/:sprintId/progress", async (req, res) => {
         const parent_id = issue.fields.parent.id;
         const child_id = issue.id;
         story_subtask_map[parent_id].number_of_sub_tasks++;
+        if (issue.fields.customfield_10020) {
+          story_subtask_map[parent_id].story_points +=
+            issue.fields.customfield_10020;
+        }
         if (issue.fields.status.name === "Done") {
           story_subtask_map[parent_id].completed_sub_tasks++;
         }
@@ -120,6 +137,36 @@ app.get("/sprint/:sprintId/subtasks/progress", async (req, res) => {
   const values = Object.values(status_category_map);
   res.json({
     values,
+  });
+});
+
+app.get("/sprint/:sprintId/members", async (req, res) => {
+  const sprint_id = req.params.sprintId;
+  const data = await getSprintIssues(sprint_id);
+  const issues = data.issues;
+  let names = new Set();
+  let members = [];
+  for (let issue of issues) {
+    if (issue.fields.issuetype.name !== "Story") {
+      if (issue.fields.assignee) {
+        let name = issue.fields.assignee.displayName;
+        if (!names.has(name)) {
+          let member = {
+            sprint_member_account_id:
+              issue.fields.assignee.accountId.toString(),
+            sprint_member_full_name: issue.fields.assignee.displayName,
+            sprint_member_card_name: issue.fields.assignee.displayName
+              .substring(0, 2)
+              .toUpperCase(),
+          };
+          members.push(member);
+          names.add(name);
+        }
+      }
+    }
+  }
+  res.json({
+    members,
   });
 });
 
