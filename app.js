@@ -198,6 +198,11 @@ app.get("/:boardID/activeSprint/stories", async (req, res) => {
     .filter((issue) => issue.fields.issuetype.name === "Story")
     .map((issue) => {
       return {
+        board_id,
+        sprint_id,
+        sprint_name,
+        sprint_start,
+        sprint_end,
         story_id: issue.id,
         story_name: issue.fields.summary,
         story_type: issue.fields.issuetype.name,
@@ -222,12 +227,151 @@ app.get("/:boardID/activeSprint/stories", async (req, res) => {
       };
     });
   res.json({
-    board_id,
-    sprint_id,
-    sprint_name,
-    sprint_start,
-    sprint_end,
     stories,
+  });
+});
+
+app.get("/:boardID/activeSprint/progress", async (req, res) => {
+  const board_id = req.params.boardID;
+  const data = await getSprints(board_id);
+  let sprint_id = "";
+  let sprint_start = "";
+  let sprint_end = "";
+  let active_sprint = data.values.filter((sprint) => sprint.state === "active");
+  if (active_sprint.length === 0) {
+    const active_sprint = data.values.filter(
+      (sprint) => sprint.state === "closed"
+    );
+    active_sprint = active_sprint[active_sprint.length - 1][0];
+  } else {
+    active_sprint = active_sprint[0];
+  }
+  sprint_id = active_sprint.id.toString();
+  const issues_data = await getSprintIssues(sprint_id);
+  const story_subtask_map = {};
+  const issues = issues_data.issues;
+  for (let issue of issues) {
+    if (issue.fields.issuetype.name === "Story") {
+      if (!story_subtask_map[issue.id]) {
+        story_subtask_map[issue.id] = {
+          number_of_sub_tasks: 0,
+          completed_sub_tasks: 0,
+          story_id: issue.id,
+          story_name: issue.fields.summary,
+          project_id: issue.fields.project.id,
+          sprint_id: issue.fields.sprint.id,
+          story_points: 0,
+          board_id,
+        };
+      }
+    } else {
+      if (issue.fields.parent) {
+        const parent_id = issue.fields.parent.id;
+        const child_id = issue.id;
+        story_subtask_map[parent_id].number_of_sub_tasks++;
+        if (issue.fields.customfield_10020) {
+          story_subtask_map[parent_id].story_points +=
+            issue.fields.customfield_10020;
+        }
+        if (issue.fields.status.name === "Done") {
+          story_subtask_map[parent_id].completed_sub_tasks++;
+        }
+      }
+    }
+  }
+  const values = Object.values(story_subtask_map);
+  res.json({
+    sprint_progress: values,
+  });
+});
+
+app.get("/:boardID/activeSprint/story/progress", async (req, res) => {
+  const board_id = req.params.boardID;
+  const data = await getSprints(board_id);
+  let sprint_id = "";
+  let active_sprint = data.values.filter((sprint) => sprint.state === "active");
+  if (active_sprint.length === 0) {
+    const active_sprint = data.values.filter(
+      (sprint) => sprint.state === "closed"
+    );
+    active_sprint = active_sprint[active_sprint.length - 1][0];
+  } else {
+    active_sprint = active_sprint[0];
+  }
+  sprint_id = active_sprint.id.toString();
+  const sprint_issues = await getSprintIssues(sprint_id);
+  const status_category_map = {};
+  const issues = sprint_issues.issues;
+  const sub_tasks = issues
+    .filter((i) => i.fields.issuetype.name === "Sub-task")
+    .map((i) => {
+      return {
+        issue_id: i.id,
+        issue_type: i.fields.issuetype.name,
+        story_id: i.fields.parent.id,
+        status_category_name: i.fields.status.statusCategory.name,
+        issue_name: i.fields.summary,
+      };
+    });
+  for (let subtask of sub_tasks) {
+    const key = subtask.story_id + subtask.status_category_name;
+    if (!status_category_map[key]) {
+      status_category_map[key] = {
+        story_id: subtask.story_id,
+        status_category_name: subtask.status_category_name,
+        issue_count: 1,
+      };
+    } else {
+      status_category_map[key].issue_count++;
+    }
+  }
+  const values = Object.values(status_category_map);
+  res.json({
+    values,
+  });
+});
+
+app.get("/:boardID/activeSprint/members", async (req, res) => {
+  const board_id = req.params.boardID;
+  const data = await getSprints(board_id);
+  let sprint_id = "";
+  let active_sprint = data.values.filter((sprint) => sprint.state === "active");
+  if (active_sprint.length === 0) {
+    const active_sprint = data.values.filter(
+      (sprint) => sprint.state === "closed"
+    );
+    active_sprint = active_sprint[active_sprint.length - 1][0];
+  } else {
+    active_sprint = active_sprint[0];
+  }
+  sprint_id = active_sprint.id.toString();
+  const sprint_issues = await getSprintIssues(sprint_id);
+  const issues = sprint_issues.issues;
+  let names = new Set();
+  let members = [];
+  for (let issue of issues) {
+    if (issue.fields.issuetype.name !== "Story") {
+      if (issue.fields.assignee) {
+        let name = issue.fields.assignee.displayName;
+        if (!names.has(name)) {
+          let member = {
+            board_id,
+            sprint_id,
+            sprint_member_account_id:
+              issue.fields.assignee.accountId.toString(),
+            sprint_member_full_name: issue.fields.assignee.displayName,
+            sprint_member_card_name: issue.fields.assignee.displayName
+              .substring(0, 2)
+              .toUpperCase(),
+          };
+          members.push(member);
+          names.add(name);
+        }
+      }
+    }
+  }
+  res.json({
+    members,
   });
 });
 
