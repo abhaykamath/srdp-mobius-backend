@@ -235,8 +235,6 @@ app.get("/:boardID/activeSprint/progress", async (req, res) => {
   const board_id = req.params.boardID;
   const data = await getSprints(board_id);
   let sprint_id = "";
-  let sprint_start = "";
-  let sprint_end = "";
   let active_sprint = data.values.filter((sprint) => sprint.state === "active");
   if (active_sprint.length === 0) {
     const active_sprint = data.values.filter(
@@ -279,7 +277,19 @@ app.get("/:boardID/activeSprint/progress", async (req, res) => {
       }
     }
   }
-  const values = Object.values(story_subtask_map);
+  let values = Object.values(story_subtask_map);
+  values = values.map((v) => {
+    return {
+      number_of_sub_tasks: v.number_of_sub_tasks.toString(),
+      completed_sub_tasks: v.completed_sub_tasks.toString(),
+      story_id: v.story_id,
+      story_name: v.story_name,
+      project_id: v.project_id,
+      sprint_id: v.sprint_id.toString(),
+      story_points: v.story_points.toString(),
+      board_id: v.board_id,
+    };
+  });
   res.json({
     sprint_progress: values,
   });
@@ -325,7 +335,14 @@ app.get("/:boardID/activeSprint/story/progress", async (req, res) => {
       status_category_map[key].issue_count++;
     }
   }
-  const values = Object.values(status_category_map);
+  let values = Object.values(status_category_map);
+  values = values.map((v) => {
+    return {
+      story_id: v.story_id,
+      status_category_name: v.status_category_name,
+      issue_count: v.issue_count.toString(),
+    };
+  });
   res.json({
     values,
   });
