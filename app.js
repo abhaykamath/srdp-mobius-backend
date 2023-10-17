@@ -342,7 +342,7 @@ app.get("/:boardID/activeSprint/story/progress", async (req, res) => {
       story_id: v.story_id,
       status_category_name: v.status_category_name,
       issue_count: v.issue_count.toString(),
-      unique_id: uuidv4(),
+      unique_id: v.story_id + v.status_category_name,
     };
   });
   res.json({
