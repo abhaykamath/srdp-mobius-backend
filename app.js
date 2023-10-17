@@ -1,4 +1,5 @@
 const express = require("express");
+const { v4: uuidv4 } = require("uuid");
 const cors = require("cors");
 const getSprints = require("./APIs/get-all-sprints-for-a-board");
 const getSprintIssues = require("./APIs/get-all-issues-for-a-sprint");
@@ -341,6 +342,7 @@ app.get("/:boardID/activeSprint/story/progress", async (req, res) => {
       story_id: v.story_id,
       status_category_name: v.status_category_name,
       issue_count: v.issue_count.toString(),
+      unique_id: uuidv4(),
     };
   });
   res.json({
