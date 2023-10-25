@@ -88,17 +88,21 @@ app.get("/sprint/:sprintId/progress", async (req, res) => {
           story_points: 0,
         };
       }
-    } else {
+    }
+  }
+  for (let issue of issues) {
+    if (issue.fields.issuetype.name === "Sub-task") {
       if (issue.fields.parent) {
         const parent_id = issue.fields.parent.id;
-        const child_id = issue.id;
-        story_subtask_map[parent_id].number_of_sub_tasks++;
-        if (issue.fields.customfield_10020) {
-          story_subtask_map[parent_id].story_points +=
-            issue.fields.customfield_10020;
-        }
-        if (issue.fields.status.name === "Done") {
-          story_subtask_map[parent_id].completed_sub_tasks++;
+        if (story_subtask_map[parent_id]) {
+          story_subtask_map[parent_id].number_of_sub_tasks++;
+          if (issue.fields.customfield_10020) {
+            story_subtask_map[parent_id].story_points +=
+              issue.fields.customfield_10020;
+          }
+          if (issue.fields.status.name === "Done") {
+            story_subtask_map[parent_id].completed_sub_tasks++;
+          }
         }
       }
     }
@@ -260,20 +264,23 @@ app.get("/:boardID/activeSprint/progress", async (req, res) => {
           project_id: issue.fields.project.id,
           sprint_id: issue.fields.sprint.id,
           story_points: 0,
-          board_id,
         };
       }
-    } else {
+    }
+  }
+  for (let issue of issues) {
+    if (issue.fields.issuetype.name === "Sub-task") {
       if (issue.fields.parent) {
         const parent_id = issue.fields.parent.id;
-        const child_id = issue.id;
-        story_subtask_map[parent_id].number_of_sub_tasks++;
-        if (issue.fields.customfield_10020) {
-          story_subtask_map[parent_id].story_points +=
-            issue.fields.customfield_10020;
-        }
-        if (issue.fields.status.name === "Done") {
-          story_subtask_map[parent_id].completed_sub_tasks++;
+        if (story_subtask_map[parent_id]) {
+          story_subtask_map[parent_id].number_of_sub_tasks++;
+          if (issue.fields.customfield_10020) {
+            story_subtask_map[parent_id].story_points +=
+              issue.fields.customfield_10020;
+          }
+          if (issue.fields.status.name === "Done") {
+            story_subtask_map[parent_id].completed_sub_tasks++;
+          }
         }
       }
     }
