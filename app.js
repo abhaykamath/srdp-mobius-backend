@@ -17,6 +17,13 @@ app.get("/health", async (req, res) => {
 
 // APIs for React
 
+app.get("/:boardId/allSprints", async (req, res) => {
+  const board_id = req.params.boardId;
+  const data = await getSprints(board_id);
+  let sprints = data.values;
+  res.json(sprints);
+});
+
 app.get("/:boardId/activeSprint", async (req, res) => {
   const board_id = req.params.boardId;
   const data = await getSprints(board_id);
@@ -37,8 +44,8 @@ app.get("/:boardId/activeSprint", async (req, res) => {
 
 app.get("/sprint/:sprintId/stories", async (req, res) => {
   const sprint_id = req.params.sprintId;
-  const data = await getSprintIssues(sprint_id);
-  const issues = data.issues
+  const response = await getSprintIssues(sprint_id);
+  const issues = response.issues
     .filter((issue) => issue.fields.issuetype.name === "Story")
     .map((issue) => {
       return {
@@ -49,7 +56,7 @@ app.get("/sprint/:sprintId/stories", async (req, res) => {
         project_id: issue.fields.project.id,
         project_name: issue.fields.project.name,
         status_name: issue.fields.status.name,
-        sprint_id: issue.fields.sprint.id.toString(),
+        sprint_id: issue.fields.customfield_10018[0].id.toString(),
         story_ac_hygiene: issue.fields.customfield_10157 ? "YES" : "NO",
         original_estimate:
           issue.fields.timetracking.originalEstimate || "Not added",
@@ -65,9 +72,7 @@ app.get("/sprint/:sprintId/stories", async (req, res) => {
           : "Reviewers not added",
       };
     });
-  res.json({
-    issues,
-  });
+  res.json({ issues });
 });
 
 app.get("/sprint/:sprintId/progress", async (req, res) => {
@@ -84,7 +89,7 @@ app.get("/sprint/:sprintId/progress", async (req, res) => {
           story_id: issue.id,
           story_name: issue.fields.summary,
           project_id: issue.fields.project.id,
-          sprint_id: issue.fields.sprint.id,
+          sprint_id: issue.fields.customfield_10018[0].id.toString(),
           story_points: 0,
         };
       }
