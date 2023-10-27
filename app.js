@@ -362,6 +362,9 @@ app.get("/:boardID/sprint/members", async (req, res) => {
               sprint_member_card_name: issue.fields.assignee.displayName
                 .substring(0, 2)
                 .toUpperCase(),
+              unique_id:
+                issue.fields.customfield_10018[0].id.toString() +
+                issue.fields.assignee.displayName,
             };
             members.push(member);
             names.add(name);
