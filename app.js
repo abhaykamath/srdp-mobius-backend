@@ -233,35 +233,28 @@ app.get("/:boardID/stories", async (req, res) => {
   });
 });
 
-app.get("/:boardID/activeSprint/progress", async (req, res) => {
+// This API is to fetch all sprint progress
+// for a specific board
+app.get("/:boardID/sprint/progress", async (req, res) => {
   const board_id = req.params.boardID;
-  const data = await getSprints(board_id);
-  let sprint_id = "";
-  let active_sprint = data.values.filter((sprint) => sprint.state === "active");
-  if (active_sprint.length === 0) {
-    const active_sprint = data.values.filter(
-      (sprint) => sprint.state === "closed"
-    );
-    active_sprint = active_sprint[active_sprint.length - 1][0];
-  } else {
-    active_sprint = active_sprint[0];
-  }
-  sprint_id = active_sprint.id.toString();
-  const issues_data = await getSprintIssues(sprint_id);
+  const data = await getBoardIssues(board_id);
+  const issues = data.issues;
   const story_subtask_map = {};
-  const issues = issues_data.issues;
   for (let issue of issues) {
     if (issue.fields.issuetype.name === "Story") {
       if (!story_subtask_map[issue.id]) {
-        story_subtask_map[issue.id] = {
-          number_of_sub_tasks: 0,
-          completed_sub_tasks: 0,
-          story_id: issue.id,
-          story_name: issue.fields.summary,
-          project_id: issue.fields.project.id,
-          sprint_id: issue.fields.sprint.id,
-          story_points: 0,
-        };
+        if (issue.fields.customfield_10018) {
+          story_subtask_map[issue.id] = {
+            number_of_sub_tasks: 0,
+            completed_sub_tasks: 0,
+            story_id: issue.id,
+            story_name: issue.fields.summary,
+            project_id: issue.fields.project.id,
+            sprint_id: issue.fields.customfield_10018[0].id.toString(),
+            story_points: 0,
+            board_id,
+          };
+        }
       }
     }
   }
