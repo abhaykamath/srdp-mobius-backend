@@ -337,41 +337,35 @@ app.get("/:boardID/sprint/story/progress", async (req, res) => {
   });
 });
 
-app.get("/:boardID/activeSprint/members", async (req, res) => {
+// This API is to fetch all sprint members
+// for a specific board
+app.get("/:boardID/sprint/members", async (req, res) => {
   const board_id = req.params.boardID;
-  const data = await getSprints(board_id);
-  let sprint_id = "";
-  let active_sprint = data.values.filter((sprint) => sprint.state === "active");
-  if (active_sprint.length === 0) {
-    const active_sprint = data.values.filter(
-      (sprint) => sprint.state === "closed"
-    );
-    active_sprint = active_sprint[active_sprint.length - 1][0];
-  } else {
-    active_sprint = active_sprint[0];
-  }
-  sprint_id = active_sprint.id.toString();
-  const sprint_issues = await getSprintIssues(sprint_id);
-  const issues = sprint_issues.issues;
+  const data = await getBoardIssues(board_id);
+  const issues = data.issues;
   let names = new Set();
   let members = [];
   for (let issue of issues) {
     if (issue.fields.issuetype.name !== "Story") {
       if (issue.fields.assignee) {
-        let name = issue.fields.assignee.displayName;
-        if (!names.has(name)) {
-          let member = {
-            board_id,
-            sprint_id,
-            sprint_member_account_id:
-              issue.fields.assignee.accountId.toString(),
-            sprint_member_full_name: issue.fields.assignee.displayName,
-            sprint_member_card_name: issue.fields.assignee.displayName
-              .substring(0, 2)
-              .toUpperCase(),
-          };
-          members.push(member);
-          names.add(name);
+        if (issue.fields.customfield_10018) {
+          let name =
+            issue.fields.assignee.displayName +
+            issue.fields.customfield_10018[0].id.toString();
+          if (!names.has(name)) {
+            let member = {
+              board_id,
+              sprint_id: issue.fields.customfield_10018[0].id.toString(),
+              sprint_member_account_id:
+                issue.fields.assignee.accountId.toString(),
+              sprint_member_full_name: issue.fields.assignee.displayName,
+              sprint_member_card_name: issue.fields.assignee.displayName
+                .substring(0, 2)
+                .toUpperCase(),
+            };
+            members.push(member);
+            names.add(name);
+          }
         }
       }
     }
