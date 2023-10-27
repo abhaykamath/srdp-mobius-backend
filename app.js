@@ -3,6 +3,7 @@ const { v4: uuidv4 } = require("uuid");
 const cors = require("cors");
 const getSprints = require("./APIs/get-all-sprints-for-a-board");
 const getSprintIssues = require("./APIs/get-all-issues-for-a-sprint");
+const getBoardIssues = require("./APIs/get-all-issues-for-a-board");
 
 const app = express();
 const PORT = 4000;
@@ -184,57 +185,48 @@ app.get("/sprint/:sprintId/members", async (req, res) => {
 
 // APIs for PI
 
-app.get("/:boardID/activeSprint/stories", async (req, res) => {
+// This API is to fetch all the stories
+// for a specific board
+app.get("/:boardID/stories", async (req, res) => {
   const board_id = req.params.boardID;
-  const data = await getSprints(board_id);
-  let sprint_id = "";
-  let sprint_start = "";
-  let sprint_end = "";
-  let active_sprint = data.values.filter((sprint) => sprint.state === "active");
-  if (active_sprint.length === 0) {
-    const active_sprint = data.values.filter(
-      (sprint) => sprint.state === "closed"
-    );
-    active_sprint = active_sprint[active_sprint.length - 1][0];
-  } else {
-    active_sprint = active_sprint[0];
-  }
-  sprint_id = active_sprint.id.toString();
-  sprint_name = active_sprint.name;
-  sprint_start = active_sprint.startDate.substring(0, 10);
-  sprint_end = active_sprint.endDate.substring(0, 10);
-  const sprint_issues = await getSprintIssues(sprint_id);
-  const stories = sprint_issues.issues
+  const data = await getBoardIssues(board_id);
+  const issues = data.issues;
+  const stories = issues
     .filter((issue) => issue.fields.issuetype.name === "Story")
     .map((issue) => {
-      return {
-        board_id,
-        sprint_id,
-        sprint_name,
-        sprint_start,
-        sprint_end,
-        story_id: issue.id,
-        story_name: issue.fields.summary,
-        story_type: issue.fields.issuetype.name,
-        story_status: issue.fields.status.statusCategory.name,
-        project_id: issue.fields.project.id,
-        project_name: issue.fields.project.name,
-        status_name: issue.fields.status.name,
-        sprint_id: issue.fields.sprint.id.toString(),
-        story_ac_hygiene: issue.fields.customfield_10157 ? "YES" : "NO",
-        original_estimate:
-          issue.fields.timetracking.originalEstimate || "Not added",
-        remaining_estimate:
-          issue.fields.timetracking.remainingEstimate || "Not added",
-        time_spent: issue.fields.timetracking.timeSpent || "Not added",
-        story_reviewers: issue.fields.customfield_10003
-          ? issue.fields.customfield_10003.length !== 0
-            ? issue.fields.customfield_10003
-                .map((r, i) => r.displayName)
-                .join(", ")
-            : "Reviewers not added"
-          : "Reviewers not added",
-      };
+      if (issue.fields.customfield_10018) {
+        return {
+          board_id,
+          sprint_id: issue.fields.customfield_10018[0].id.toString(),
+          sprint_name: issue.fields.customfield_10018[0].name,
+          sprint_start: issue.fields.customfield_10018[0].startDate
+            ? issue.fields.customfield_10018[0].startDate.substring(0, 10)
+            : "",
+          sprint_end: issue.fields.customfield_10018[0].endDate
+            ? issue.fields.customfield_10018[0].endDate.substring(0, 10)
+            : "",
+          story_id: issue.id,
+          story_name: issue.fields.summary,
+          story_type: issue.fields.issuetype.name,
+          story_status: issue.fields.status.statusCategory.name,
+          project_id: issue.fields.project.id,
+          project_name: issue.fields.project.name,
+          status_name: issue.fields.status.name,
+          story_ac_hygiene: issue.fields.customfield_10157 ? "YES" : "NO",
+          original_estimate:
+            issue.fields.timetracking.originalEstimate || "Not added",
+          remaining_estimate:
+            issue.fields.timetracking.remainingEstimate || "Not added",
+          time_spent: issue.fields.timetracking.timeSpent || "Not added",
+          story_reviewers: issue.fields.customfield_10003
+            ? issue.fields.customfield_10003.length !== 0
+              ? issue.fields.customfield_10003
+                  .map((r, i) => r.displayName)
+                  .join(", ")
+              : "Reviewers not added"
+            : "Reviewers not added",
+        };
+      }
     });
   res.json({
     stories,

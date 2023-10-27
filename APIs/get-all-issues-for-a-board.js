@@ -11,13 +11,13 @@ const auth = {
 };
 
 //Gets all issues in a particular project using the Jira Cloud REST API
-async function getSprints(boardId) {
+async function getBoardIssues(boardId) {
   try {
     const baseUrl = "https://" + domain + ".atlassian.net";
 
     const config = {
       method: "get",
-      url: baseUrl + `/rest/agile/1.0/board/${boardId}/issue?maxResults=200`,
+      url: baseUrl + `/rest/agile/1.0/board/${boardId}/issue?maxResults=1000`,
       headers: { "Content-Type": "application/json" },
       auth: auth,
     };
@@ -29,4 +29,4 @@ async function getSprints(boardId) {
   }
 }
 
-module.exports = getSprints;
+module.exports = getBoardIssues;
