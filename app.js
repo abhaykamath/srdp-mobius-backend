@@ -293,23 +293,13 @@ app.get("/:boardID/sprint/progress", async (req, res) => {
   });
 });
 
-app.get("/:boardID/activeSprint/story/progress", async (req, res) => {
+// This API is to fetch all story progress
+// for a specific board
+app.get("/:boardID/sprint/story/progress", async (req, res) => {
   const board_id = req.params.boardID;
-  const data = await getSprints(board_id);
-  let sprint_id = "";
-  let active_sprint = data.values.filter((sprint) => sprint.state === "active");
-  if (active_sprint.length === 0) {
-    const active_sprint = data.values.filter(
-      (sprint) => sprint.state === "closed"
-    );
-    active_sprint = active_sprint[active_sprint.length - 1][0];
-  } else {
-    active_sprint = active_sprint[0];
-  }
-  sprint_id = active_sprint.id.toString();
-  const sprint_issues = await getSprintIssues(sprint_id);
+  const data = await getBoardIssues(board_id);
   const status_category_map = {};
-  const issues = sprint_issues.issues;
+  const issues = data.issues;
   const sub_tasks = issues
     .filter((i) => i.fields.issuetype.name === "Sub-task")
     .map((i) => {
