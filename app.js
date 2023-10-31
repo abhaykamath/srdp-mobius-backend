@@ -187,6 +187,28 @@ app.get("/sprint/:sprintId/members", async (req, res) => {
 
 // This API is to fetch all the stories
 // for a specific board
+app.get("/:boardId/sprints", async (req, res) => {
+  const board_id = req.params.boardId;
+  const data = await getSprints(board_id);
+  let sprints = data.values;
+  sprints = sprints.map((sprint) => {
+    if (sprint.state !== "future")
+      return {
+        board_id: sprint.originBoardId.toString(),
+        sprint_id: sprint.id.toString(),
+        sprint_name: sprint.name,
+        sprint_start: sprint.startDate.substring(0, 10),
+        sprint_end: sprint.endDate.substring(0, 10),
+        spint_state: sprint.state,
+      };
+  });
+  // Getting rid of null values
+  sprints = sprints.filter((sprint) => {
+    if (sprint) return sprint;
+  });
+  res.json(sprints);
+});
+
 app.get("/:boardID/stories", async (req, res) => {
   const board_id = req.params.boardID;
   const data = await getBoardIssues(board_id);
