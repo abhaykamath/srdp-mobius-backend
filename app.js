@@ -92,7 +92,9 @@ app.get("/sprint/:sprintId/progress", async (req, res) => {
           project_id: issue.fields.project.id,
           sprint_id: issue.fields.customfield_10018[0].id.toString(),
           story_points: 0,
+          story_status: issue.fields.status.name,
         };
+        console.log("story_subtask_map", story_subtask_map);
       }
     }
   }
@@ -275,6 +277,7 @@ app.get("/:boardID/sprint/progress", async (req, res) => {
             sprint_id: issue.fields.customfield_10018[0].id.toString(),
             story_points: 0,
             board_id,
+            story_status: issue.fields.status.statusCategory.name,
           };
         }
       }
@@ -308,6 +311,7 @@ app.get("/:boardID/sprint/progress", async (req, res) => {
       sprint_id: v.sprint_id.toString(),
       story_points: v.story_points.toString(),
       board_id: v.board_id,
+      story_status: v.story_status
     };
   });
   res.json({
