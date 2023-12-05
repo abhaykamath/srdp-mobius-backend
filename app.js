@@ -71,6 +71,10 @@ app.get("/sprint/:sprintId/stories", async (req, res) => {
                 .join(", ")
             : "Reviewers not added"
           : "Reviewers not added",
+        story_points: issue.fields.customfield_10020 == null ? 0 : issue.fields.customfield_10020,
+        updated : issue.fields.updated,
+        creator : issue.fields.creator.displayName,
+        assigne : issue.fields.assignee.displayName,
       };
     });
   res.json({ issues });
@@ -94,7 +98,7 @@ app.get("/sprint/:sprintId/progress", async (req, res) => {
           story_points: 0,
           story_status: issue.fields.status.name,
         };
-        console.log("story_subtask_map", story_subtask_map);
+        // console.log("story_subtask_map", story_subtask_map);
       }
     }
   }
