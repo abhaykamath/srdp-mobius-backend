@@ -71,10 +71,14 @@ app.get("/sprint/:sprintId/stories", async (req, res) => {
                 .join(", ")
             : "Reviewers not added"
           : "Reviewers not added",
-        story_points: issue.fields.customfield_10020 == null ? 0 : issue.fields.customfield_10020,
-        updated : issue.fields.updated,
-        creator : issue.fields.creator.displayName,
-        assigne : issue.fields.assignee.displayName,
+        story_points:
+          issue.fields.customfield_10020 == null
+            ? 0
+            : issue.fields.customfield_10020,
+        updated: issue.fields.updated,
+        creator: issue.fields.creator.displayName,
+        assigne: issue.fields.assignee.displayName,
+        duedate: issue.fields.duedate == null ? "Not added" : issue.fields.duedate,
       };
     });
   res.json({ issues });
@@ -315,7 +319,7 @@ app.get("/:boardID/sprint/progress", async (req, res) => {
       sprint_id: v.sprint_id.toString(),
       story_points: v.story_points.toString(),
       board_id: v.board_id,
-      story_status: v.story_status
+      story_status: v.story_status,
     };
   });
   res.json({
