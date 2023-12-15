@@ -22,7 +22,7 @@ async function getDayComments() {
       headers: { "Content-Type": "application/json" , "Authorization": ""},
       auth: auth,
       data: {
-        jql: "project = 'PIR' AND updatedDate >= startOfDay() AND updatedDate <= endOfDay() ORDER BY updated DESC",
+        jql: "updatedDate >= startOfDay() AND updatedDate <= endOfDay() ORDER BY updated DESC",
         fields: ["key", "project", "assignee", "status", "comment", "issuetype", "updated"]
       }
     };
