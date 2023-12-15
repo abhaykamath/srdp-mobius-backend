@@ -29,8 +29,9 @@ app.get("/:boardId/allSprints", async (req, res) => {
 
 app.get("/comments", async (req, res) => {
   const body = req.params.body;
-  const data = await getComments(body);
-  const issues = data.issues || [];
+  const issues = await getComments(body);
+  // const issues = data.issues || [];
+  console.log('no of issues: ' + issues.length);
   const issuesHavingStatusComments = issues.filter((issue) => {
     const comments = (issue.fields.comment && issue.fields.comment.comments) || [];
     const dayComments = comments.filter((c) => isToday(c.updated));
