@@ -4,6 +4,8 @@ const cors = require("cors");
 const getSprints = require("./APIs/get-all-sprints-for-a-board");
 const getSprintIssues = require("./APIs/get-all-issues-for-a-sprint");
 const getBoardIssues = require("./APIs/get-all-issues-for-a-board");
+const getComments = require("./APIs/comments");
+const { isToday } = require("./APIs/utils");
 
 const app = express();
 const PORT = 4000;
@@ -23,6 +25,26 @@ app.get("/:boardId/allSprints", async (req, res) => {
   const data = await getSprints(board_id);
   let sprints = data.values;
   res.json(sprints);
+});
+
+app.get("/comments", async (req, res) => {
+  const body = req.params.body;
+  const data = await getComments(body);
+  const issues = data.issues || [];
+  const issuesHavingStatusComments = issues.filter((issue) => {
+    const comments = issue.fields.comment.comments || [];
+    const dayComments = comments.filter((c) => isToday(c.updated));
+    const commentsHavingUpdate = dayComments.filter((c) => {
+      const hasUpdate = c.body.trim().startsWith("[#STATUS_UPDATE#]:");
+      if (hasUpdate) c.body = c.body.substring(19).trim();
+      return hasUpdate;
+    });
+    const havingUpdates = commentsHavingUpdate.length > 0;
+    issue.statusUpdates = commentsHavingUpdate;
+    return havingUpdates;
+  });
+  // let all_comments = data;
+  res.json(issuesHavingStatusComments);
 });
 
 app.get("/:boardId/activeSprint", async (req, res) => {
@@ -78,7 +100,8 @@ app.get("/sprint/:sprintId/stories", async (req, res) => {
         updated: issue.fields.updated,
         creator: issue.fields.creator.displayName,
         assigne: issue.fields.assignee.displayName,
-        duedate: issue.fields.duedate == null ? "Not added" : issue.fields.duedate,
+        duedate:
+          issue.fields.duedate == null ? "Not added" : issue.fields.duedate,
       };
     });
   res.json({ issues });
