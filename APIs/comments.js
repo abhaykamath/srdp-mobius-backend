@@ -24,7 +24,7 @@ async function getDayComments(startAt = 0) {
       auth: auth,
       data: {
         jql: "updatedDate >= startOfDay() AND updatedDate <= endOfDay() ORDER BY updated DESC",
-        fields: ["key", "project", "assignee", "status", "comment", "issuetype", "updated", "summary"],
+        fields: ["key", "project", "assignee", "status", "comment", "issuetype", "updated", "summary", "parent"],
         maxResults: 10000,
         startAt
       }
