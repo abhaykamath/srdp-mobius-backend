@@ -44,7 +44,7 @@ app.get("/comments", async (req, res) => {
     return havingUpdates;
   });
   // let all_comments = data;
-  res.json(issues);
+  res.json(issuesHavingStatusComments);
 });
 
 app.get("/:boardId/activeSprint", async (req, res) => {
