@@ -32,7 +32,7 @@ app.get("/comments", async (req, res) => {
   const data = await getComments(body);
   const issues = data.issues || [];
   const issuesHavingStatusComments = issues.filter((issue) => {
-    const comments = issue.fields.comment.comments || [];
+    const comments = (issue.fields.comment && issue.fields.comment.comments) || [];
     const dayComments = comments.filter((c) => isToday(c.updated));
     const commentsHavingUpdate = dayComments.filter((c) => {
       const hasUpdate = c.body.trim().startsWith("[#STATUS_UPDATE#]:");
@@ -44,7 +44,7 @@ app.get("/comments", async (req, res) => {
     return havingUpdates;
   });
   // let all_comments = data;
-  res.json(issuesHavingStatusComments);
+  res.json(issues);
 });
 
 app.get("/:boardId/activeSprint", async (req, res) => {
