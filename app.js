@@ -31,9 +31,10 @@ app.get("/comments", async (req, res) => {
   const body = req.params.body;
   const issues = await getComments(body);
   // const issues = data.issues || [];
-  console.log('no of issues: ' + issues.length);
+  console.log("no of issues: " + issues.length);
   const issuesHavingStatusComments = issues.filter((issue) => {
-    const comments = (issue.fields.comment && issue.fields.comment.comments) || [];
+    const comments =
+      (issue.fields.comment && issue.fields.comment.comments) || [];
     const dayComments = comments.filter((c) => isToday(c.updated));
     const commentsHavingUpdate = dayComments.filter((c) => {
       const hasUpdate = c.body.trim().startsWith("[#STATUS_UPDATE#]:");
@@ -100,7 +101,10 @@ app.get("/sprint/:sprintId/stories", async (req, res) => {
             : issue.fields.customfield_10020,
         updated: issue.fields.updated,
         creator: issue.fields.creator.displayName,
-        assigne: issue.fields.assignee.displayName,
+        assignee:
+          issue.fields.assignee !== null
+            ? issue.fields.assignee.displayName
+            : "Not added",
         duedate:
           issue.fields.duedate == null ? "Not added" : issue.fields.duedate,
       };
