@@ -5,6 +5,7 @@ const getSprints = require("./APIs/get-all-sprints-for-a-board");
 const getSprintIssues = require("./APIs/get-all-issues-for-a-sprint");
 const getBoardIssues = require("./APIs/get-all-issues-for-a-board");
 const getComments = require("./APIs/comments");
+const getAlerts = require("./APIs/getalerts");
 const { isToday } = require("./APIs/utils");
 
 const app = express();
@@ -25,6 +26,55 @@ app.get("/:boardId/allSprints", async (req, res) => {
   const data = await getSprints(board_id);
   let sprints = data.values;
   res.json(sprints);
+});
+
+// ALerts
+app.get("/alerts", async (req, res) => {
+  const data = await getAlerts();
+  const issues = data.issues;
+  const alerts_data = issues
+    .filter((issue) => issue.fields.issuetype.name === "Story")
+    .map((issue) => {
+      if (issue.fields.customfield_10018) {
+        return {
+          creator: issue.fields.creator.displayName,
+          assignee:
+            issue.fields.assignee !== null
+              ? issue.fields.assignee.displayName
+              : "Not added",
+          sprint_id: issue.fields.customfield_10018[0].id.toString(),
+          sprint_name: issue.fields.customfield_10018[0].name,
+          sprint_start: issue.fields.customfield_10018[0].startDate
+            ? issue.fields.customfield_10018[0].startDate.substring(0, 10)
+            : "",
+          sprint_end: issue.fields.customfield_10018[0].endDate
+            ? issue.fields.customfield_10018[0].endDate.substring(0, 10)
+            : "",
+          story_id: issue.id,
+          story_name: issue.fields.summary,
+          story_type: issue.fields.issuetype.name,
+          story_status: issue.fields.status.statusCategory.name,
+          project_id: issue.fields.project.id,
+          project_name: issue.fields.project.name,
+          status_name: issue.fields.status.name,
+          story_points:
+            issue.fields.customfield_10020 == null
+              ? 0
+              : issue.fields.customfield_10020,
+          story_ac_hygiene: issue.fields.customfield_10157 ? "YES" : "NO",
+          story_reviewers: issue.fields.customfield_10003
+            ? issue.fields.customfield_10003.length !== 0
+              ? issue.fields.customfield_10003
+                  .map((r, i) => r.displayName)
+                  .join(", ")
+              : "Reviewers not added"
+            : "Reviewers not added",
+          updated: issue.fields.updated,
+        };
+      }
+    });
+  console.log(alerts_data);
+  res.json(alerts_data);
 });
 
 app.get("/comments", async (req, res) => {
@@ -292,6 +342,9 @@ app.get("/:boardID/stories", async (req, res) => {
     stories,
   });
 });
+// for understanding
+// if variable==100 ? 100 < x ? 10 : null : not
+// {{[{},{}],[]}}
 
 // This API is to fetch all sprint progress
 // for a specific board
@@ -394,6 +447,7 @@ app.get("/:boardID/sprint/story/progress", async (req, res) => {
       unique_id: v.story_id + v.status_category_name,
     };
   });
+
   res.json({
     values,
   });
@@ -430,6 +484,7 @@ app.get("/:boardID/sprint/members", async (req, res) => {
             };
             members.push(member);
             names.add(name);
+            console.log(names);
           }
         }
       }
