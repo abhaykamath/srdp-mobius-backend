@@ -16,16 +16,19 @@ async function getAlerts() {
     const baseUrl = "https://" + domain + ".atlassian.net";
 
     const config = {
-      method: "get",
-      url: baseUrl + `/rest/api/2/search?jql=status=%22Done%22%20AND%20updatedDate%20%3E=%20startOfDay()%20AND%20updatedDate%20%3C=%20endOfDay()%20ORDER%20BY%20updated%20DESC&maxResults=1000`,
+      method: "post",
+      url: baseUrl + `/rest/api/2/search`,
       headers: { "Content-Type": "application/json" },
       auth: auth,
+      data: {
+        jql: 'status="Done" AND updatedDate >= startOfDay() AND updatedDate <= endOfDay() ORDER BY updated DESC',
+        maxResults: 10000
+      },
     };
     const response = await axios.request(config);
     return response.data;
   } catch (error) {
     console.log("error: ");
-    console.log(error.response.data.errors);
   }
 }
 
