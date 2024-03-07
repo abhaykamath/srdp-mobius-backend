@@ -31,11 +31,12 @@ app.get("/:boardId/allSprints", async (req, res) => {
 // ALerts
 app.get("/alerts", async (req, res) => {
   const data = await getAlerts();
+  console.log(data, "data");
   const issues = data.issues;
   const alerts_data = issues
     .filter((issue) => issue.fields.issuetype.name === "Story")
     .map((issue) => {
-      if (issue.fields.customfield_10018) {
+      if (issue.fields.customfield_10018 && issue !== null) {
         return {
           creator: issue.fields.creator.displayName,
           assignee:
@@ -69,11 +70,12 @@ app.get("/alerts", async (req, res) => {
                   .join(", ")
               : "Reviewers not added"
             : "Reviewers not added",
+          // updated: new Date(issue.fields.updated).getTime(),
           updated: issue.fields.updated,
         };
       }
     });
-  console.log(alerts_data);
+  // console.log(alerts_data);
   res.json(alerts_data);
 });
 
@@ -179,6 +181,9 @@ app.get("/sprint/:sprintId/progress", async (req, res) => {
           sprint_id: issue.fields.customfield_10018[0].id.toString(),
           story_points: 0,
           story_status: issue.fields.status.name,
+          assignee : issue.fields.assignee !== null
+          ? issue.fields.assignee.displayName
+          : "Not added",
         };
         // console.log("story_subtask_map", story_subtask_map);
       }
@@ -220,6 +225,7 @@ app.get("/sprint/:sprintId/subtasks/progress", async (req, res) => {
         issue_type: i.fields.issuetype.name,
         story_id: i.fields.parent.id,
         status_category_name: i.fields.status.statusCategory.name,
+        assignee :  i.fields.assignee.displayName,
         issue_name: i.fields.summary,
       };
     });
@@ -230,6 +236,7 @@ app.get("/sprint/:sprintId/subtasks/progress", async (req, res) => {
         story_id: subtask.story_id,
         status_category_name: subtask.status_category_name,
         issue_count: 1,
+        assignee :subtask.assignee,
       };
     } else {
       status_category_map[key].issue_count++;
@@ -328,6 +335,9 @@ app.get("/:boardID/stories", async (req, res) => {
           remaining_estimate:
             issue.fields.timetracking.remainingEstimate || "Not added",
           time_spent: issue.fields.timetracking.timeSpent || "Not added",
+          assignee : issue.fields.assignee !== null
+          ? issue.fields.assignee.displayName
+          : "Not added",
           story_reviewers: issue.fields.customfield_10003
             ? issue.fields.customfield_10003.length !== 0
               ? issue.fields.customfield_10003
@@ -367,6 +377,9 @@ app.get("/:boardID/sprint/progress", async (req, res) => {
             story_points: 0,
             board_id,
             story_status: issue.fields.status.statusCategory.name,
+            assignee : issue.fields.assignee !== null
+            ? issue.fields.assignee.displayName
+            : "Not added",
           };
         }
       }
@@ -401,6 +414,7 @@ app.get("/:boardID/sprint/progress", async (req, res) => {
       story_points: v.story_points.toString(),
       board_id: v.board_id,
       story_status: v.story_status,
+      assignee : v.assignee,
     };
   });
   res.json({
@@ -424,6 +438,9 @@ app.get("/:boardID/sprint/story/progress", async (req, res) => {
         story_id: i.fields.parent.id,
         status_category_name: i.fields.status.statusCategory.name,
         issue_name: i.fields.summary,
+        assignee : i.fields.assignee !== null
+        ? i.fields.assignee.displayName
+        : "Not added",
       };
     });
   for (let subtask of sub_tasks) {
@@ -433,6 +450,7 @@ app.get("/:boardID/sprint/story/progress", async (req, res) => {
         story_id: subtask.story_id,
         status_category_name: subtask.status_category_name,
         issue_count: 1,
+        assignee : subtask.assignee,
       };
     } else {
       status_category_map[key].issue_count++;
@@ -444,6 +462,7 @@ app.get("/:boardID/sprint/story/progress", async (req, res) => {
       story_id: v.story_id,
       status_category_name: v.status_category_name,
       issue_count: v.issue_count.toString(),
+      assignee : v.assignee,
       unique_id: v.story_id + v.status_category_name,
     };
   });
@@ -481,6 +500,9 @@ app.get("/:boardID/sprint/members", async (req, res) => {
               unique_id:
                 issue.fields.customfield_10018[0].id.toString() +
                 issue.fields.assignee.displayName,
+                 assignee : issue.fields.assignee !== null
+            ? issue.fields.assignee.displayName
+            : "Not added",
             };
             members.push(member);
             names.add(name);
@@ -498,3 +520,8 @@ app.get("/:boardID/sprint/members", async (req, res) => {
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}...`);
 });
+
+
+
+
+
