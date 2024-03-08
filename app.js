@@ -225,7 +225,7 @@ app.get("/sprint/:sprintId/subtasks/progress", async (req, res) => {
         issue_type: i.fields.issuetype.name,
         story_id: i.fields.parent.id,
         status_category_name: i.fields.status.statusCategory.name,
-        assignee :  i.fields.assignee.displayName,
+        assignee :  i.fields.assignee?i.fields.assignee.displayName : "Not added" ,
         issue_name: i.fields.summary,
       };
     });
